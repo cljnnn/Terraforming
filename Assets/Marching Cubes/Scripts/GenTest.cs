@@ -35,7 +35,7 @@ public class GenTest : MonoBehaviour
 	[HideInInspector] public RenderTexture processedDensityTexture;
 	Chunk[] chunks;
 
-	VertexData[] vertexDataArray;
+	TriangleData[] triangleDataArray;
 
 	int totalVerts;
 
@@ -159,24 +159,24 @@ public class GenTest : MonoBehaviour
 		ComputeHelper.Dispatch(meshCompute, numVoxelsPerAxis, numVoxelsPerAxis, numVoxelsPerAxis, marchKernel);
 
 		// Create mesh
-		int[] vertexCountData = new int[1];
-		triCountBuffer.SetData(vertexCountData);
+		int[] triangleCountData = new int[1];
+		triCountBuffer.SetData(triangleCountData);
 		ComputeBuffer.CopyCount(triangleBuffer, triCountBuffer, 0);
 
 		timer_fetchVertexData.Start();
-		triCountBuffer.GetData(vertexCountData);
+		triCountBuffer.GetData(triangleCountData);
 
-		int numVertices = vertexCountData[0] * 3;
+		int numTriangles = triangleCountData[0];
 
 		// Fetch vertex data from GPU
 
-		triangleBuffer.GetData(vertexDataArray, 0, 0, numVertices);
+		triangleBuffer.GetData(triangleDataArray, 0, 0, numTriangles);
 
 		timer_fetchVertexData.Stop();
 
 		//CreateMesh(vertices);
 		timer_processVertexData.Start();
-		chunk.CreateMesh(vertexDataArray, numVertices, useFlatShading);
+		chunk.CreateMesh(triangleDataArray, numTriangles, useFlatShading);
 		timer_processVertexData.Stop();
 	}
 
@@ -205,11 +205,10 @@ public class GenTest : MonoBehaviour
 		int numVoxelsPerAxis = numPointsPerAxis - 1;
 		int numVoxels = numVoxelsPerAxis * numVoxelsPerAxis * numVoxelsPerAxis;
 		int maxTriangleCount = numVoxels * 5;
-		int maxVertexCount = maxTriangleCount * 3;
 
 		triCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
-		triangleBuffer = new ComputeBuffer(maxVertexCount, ComputeHelper.GetStride<VertexData>(), ComputeBufferType.Append);
-		vertexDataArray = new VertexData[maxVertexCount];
+		triangleBuffer = new ComputeBuffer(maxTriangleCount, ComputeHelper.GetStride<TriangleData>(), ComputeBufferType.Append);
+		triangleDataArray = new TriangleData[maxTriangleCount];
 	}
 
 	void ReleaseBuffers()

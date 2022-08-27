@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 using Unity.Mathematics;
@@ -51,7 +52,7 @@ public class Chunk
 		processedTriangles = new List<int>();
 	}
 
-	public void CreateMesh(VertexData[] vertexData, int numVertices, bool useFlatShading)
+	public void CreateMesh(TriangleData[] triangleData, int numTriangles, bool useFlatShading)
 	{
 
 		vertexIndexMap.Clear();
@@ -61,26 +62,32 @@ public class Chunk
 
 		int triangleIndex = 0;
 
-		for (int i = 0; i < numVertices; i++)
+		for (int i = 0; i < numTriangles; i++)
 		{
-			VertexData data = vertexData[i];
+			TriangleData data = triangleData[i];
 
-			int sharedVertexIndex;
-			if (!useFlatShading && vertexIndexMap.TryGetValue(data.id, out sharedVertexIndex))
+			Action<VertexData> addVertex = data =>
 			{
-				processedTriangles.Add(sharedVertexIndex);
-			}
-			else
-			{
-				if (!useFlatShading)
+				int sharedVertexIndex;
+				if (!useFlatShading && vertexIndexMap.TryGetValue(data.id, out sharedVertexIndex))
 				{
-					vertexIndexMap.Add(data.id, triangleIndex);
+					processedTriangles.Add(sharedVertexIndex);
 				}
-				processedVertices.Add(data.position);
-				processedNormals.Add(data.normal);
-				processedTriangles.Add(triangleIndex);
-				triangleIndex++;
-			}
+				else
+				{
+					if (!useFlatShading)
+					{
+						vertexIndexMap.Add(data.id, triangleIndex);
+					}
+					processedVertices.Add(data.position);
+					processedNormals.Add(data.normal);
+					processedTriangles.Add(triangleIndex);
+					triangleIndex++;
+				}
+			};
+			addVertex(data.vertexA);
+			addVertex(data.vertexB);
+			addVertex(data.vertexC);
 		}
 
 		collider.sharedMesh = null;
